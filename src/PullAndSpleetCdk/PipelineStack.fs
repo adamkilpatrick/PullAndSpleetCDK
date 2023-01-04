@@ -7,13 +7,13 @@ open Amazon.CDK.AWS.SSM
 type PipelineStack(scope, id, props) as this =
     inherit Stack(scope, id, props)
 
-    let foo = CodePipelineSource.Connection
     let shellStepProps = 
         let connectionSourceOptions = new ConnectionSourceOptions()
         connectionSourceOptions.ConnectionArn <- StringParameter.ValueForStringParameter(this, "GITHUB_CONNECTION_ARN")
         let initShellStepProps = new ShellStepProps()
         initShellStepProps.Input <- CodePipelineSource.Connection("adamkilpatrick/PullAndSpleetCDK","main",connectionSourceOptions)
-        initShellStepProps.Commands <- [|"npm ci"; "npm run build"; "npx cdk synth"|]
+        initShellStepProps.InstallCommands <- [|"npm install -g aws-cdk"|]
+        initShellStepProps.Commands <- [|"cdk synth"|]
         initShellStepProps
     let shellStep = new ShellStep("PipelineShellStep",shellStepProps)
 
