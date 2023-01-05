@@ -3,6 +3,7 @@ namespace PullAndSpleetCdk
 open Amazon.CDK
 open Amazon.CDK.Pipelines
 open Amazon.CDK.AWS.SSM
+open Amazon.CDK.AWS.CodeBuild
 
 type PipelineStack(scope, id, props) as this =
     inherit Stack(scope, id, props)
@@ -17,6 +18,12 @@ type PipelineStack(scope, id, props) as this =
         initShellStepProps
     let shellStep = new ShellStep("PipelineShellStep",shellStepProps)
 
+    let codeBuildOptions = 
+        let initCodeBuildOptions = new CodeBuildOptions()
+        let buildEnvironment = new BuildEnvironment()
+        buildEnvironment.BuildImage <- LinuxBuildImage.STANDARD_6_0
+        initCodeBuildOptions.BuildEnvironment <- buildEnvironment
+        initCodeBuildOptions
     let pipelineProps: CodePipelineProps = 
         let initPipelineProps = new CodePipelineProps()
         initPipelineProps.SelfMutation <- true
@@ -24,6 +31,7 @@ type PipelineStack(scope, id, props) as this =
         initPipelineProps.DockerEnabledForSynth <- true
         initPipelineProps.PipelineName <- "PullAndSpleetPipeline"
         initPipelineProps.Synth <- shellStep
+        initPipelineProps.SynthCodeBuildDefaults <- codeBuildOptions
         initPipelineProps
 
     let pipeline = 
