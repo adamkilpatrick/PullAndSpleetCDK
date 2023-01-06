@@ -6,6 +6,7 @@ open Amazon.CDK.AWS.SSM
 open Amazon.CDK.AWS.CodeBuild
 open System.Collections.Generic
 open Amazon.CDK.AWS.IAM
+open Amazon.CDK.AWS.S3
 
 type PipelineStack(scope, id, props) as this =
     inherit Stack(scope, id, props)
@@ -43,11 +44,12 @@ type PipelineStack(scope, id, props) as this =
         let initCodeBuildStepProps = new CodeBuildStepProps()
         let connectionSourceOptions = new ConnectionSourceOptions()
         connectionSourceOptions.ConnectionArn <- StringParameter.ValueForStringParameter(this, "GITHUB_CONNECTION_ARN")
+        let buildCacheBucket = new Bucket(this, "DockerBuildCacheBucket")
         let buildEnvironment = new BuildEnvironment()
         buildEnvironment.BuildImage <- LinuxBuildImage.STANDARD_6_0
         buildEnvironment.Privileged <- true
         initCodeBuildStepProps.BuildEnvironment <- buildEnvironment
-        initCodeBuildStepProps.Cache <- Cache.Local([|LocalCacheMode.DOCKER_LAYER|])
+        initCodeBuildStepProps.Cache <- Cache.Bucket(buildCacheBucket)
         initCodeBuildStepProps.Input <- CodePipelineSource.Connection("adamkilpatrick/PullAndSpleet","main",connectionSourceOptions)
         initCodeBuildStepProps.Commands <- [|
             "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin "+ecrRepo.RepositoryUri;
@@ -62,6 +64,16 @@ type PipelineStack(scope, id, props) as this =
             "docker push $REPOSITORY_URI:latest";
             "docker push $REPOSITORY_URI:$IMAGE_TAG";
         |]
+        let cacheBucketStatementProps = new PolicyStatementProps()
+        cacheBucketStatementProps.Actions <- [|
+            "s3:PutObject";
+            "s3:GetObject";
+            "s3:GetObjectVersion";
+            "s3:GetBucketAcl";
+            "s3:GetBucketLocation";
+        |]
+        cacheBucketStatementProps.Effect <- Effect.ALLOW
+        cacheBucketStatementProps.Resources <- [|buildCacheBucket.BucketArn; buildCacheBucket.BucketArn+"/*"|]
         let authTokenStatementProps = new PolicyStatementProps()
         authTokenStatementProps.Actions <- [|"ecr:GetAuthorizationToken";|]
         authTokenStatementProps.Effect <- Effect.ALLOW

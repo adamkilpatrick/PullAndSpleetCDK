@@ -17,6 +17,7 @@ type PullAndSpleetCdkStack(scope, id, props: PullAndSpleetCdkStackProps) as this
         repoAttributes.RepositoryName <- props.ecrRepoName
         initFunctionProps.Code <- Code.FromEcrImage(Repository.FromRepositoryAttributes(this, "EcrRepo", repoAttributes))
         initFunctionProps.Handler <- Handler.FROM_IMAGE
+        initFunctionProps.Timeout <- Duration.Minutes(10.0)
         initFunctionProps
     let pullAndSpleetFunction = 
         let lambdaFunction = new Function(this, "PullAndSpleetFunction", functionProps)
