@@ -13,8 +13,8 @@ type PullAndSpleetCdkStack(scope, id, props: PullAndSpleetCdkStackProps) as this
         let initFunctionProps = new FunctionProps()
         initFunctionProps.Runtime <- Runtime.FROM_IMAGE
         let repoAttributes = new RepositoryAttributes()
-        repoAttributes.RepositoryArn <- props.ecrRepo
-        repoAttributes.RepositoryName <- "pullandspleet"
+        repoAttributes.RepositoryArn <- props.ecrRepoArn
+        repoAttributes.RepositoryName <- props.ecrRepoName
         initFunctionProps.Code <- Code.FromEcrImage(Repository.FromRepositoryAttributes(this, "EcrRepo", repoAttributes))
         initFunctionProps.Handler <- Handler.FROM_IMAGE
         initFunctionProps

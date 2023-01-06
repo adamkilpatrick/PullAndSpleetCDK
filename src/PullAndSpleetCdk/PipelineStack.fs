@@ -72,6 +72,7 @@ type PipelineStack(scope, id, props) as this =
             "ecr:GetDownloadUrlForLayer";
             "ecr:BatchGetImage";
             "ecr:TagResource";
+            "ecr:PutImage"
             "ecr:InitiateLayerUpload";
             "ecr:UploadLayerPart";
             "ecr:CompleteLayerUpload"
@@ -88,11 +89,17 @@ type PipelineStack(scope, id, props) as this =
         let initcodeBuildStep = new CodeBuildStep("DockerPushStep", codeBuildStepProps)
         initcodeBuildStep
 
-    member this.cfnOutputProp = 
+    member this.ecrRepoArn = 
         let cfnOutputProps = new CfnOutputProps()
-        cfnOutputProps.ExportName <- "ECR-REPO"
+        cfnOutputProps.ExportName <- "ECR-REPO-ARN"
         cfnOutputProps.Value <- ecrRepo.RepositoryArn
-        let cfnOutput = new CfnOutput(this, "EcrRepoOutput", cfnOutputProps)
+        let cfnOutput = new CfnOutput(this, "EcrRepoArn", cfnOutputProps)
+        cfnOutput
+    member this.ecrRepoName = 
+        let cfnOutputProps = new CfnOutputProps()
+        cfnOutputProps.ExportName <- "ECR-REPO-NAME"
+        cfnOutputProps.Value <- ecrRepo.RepositoryName
+        let cfnOutput = new CfnOutput(this, "EcrRepoName", cfnOutputProps)
         cfnOutput
     member this.ecrRepository = ecrRepo
     member this.pipeline = 

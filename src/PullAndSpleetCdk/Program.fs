@@ -14,7 +14,7 @@ let main _ =
     let pipelineStack = PipelineStack(app, "PipelineStack", StackProps())
 
 
-    let deployStage = new DeployStage(app, "DeployStage", new PullAndSpleetCdkStackProps(pipelineStack.cfnOutputProp.ImportValue))
+    let deployStage = new DeployStage(app, "DeployStage", new PullAndSpleetCdkStackProps(pipelineStack.ecrRepoArn.ImportValue, pipelineStack.ecrRepoName.ImportValue))
     
     pipelineStack.pipeline.AddStage(deployStage) |> ignore
     app.Synth() |> ignore
