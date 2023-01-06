@@ -1,11 +1,21 @@
 open Amazon.CDK
 open PullAndSpleetCdk
 
+type DeployStage(scope, id, pullAndSpleetCdkStackProps:PullAndSpleetCdkStackProps) as this =
+    inherit Stage(scope, id, new StageProps())
+
+    do new PullAndSpleetCdkStack(this, "PullAndSpleetCdkStack", pullAndSpleetCdkStackProps) |> ignore
+
 [<EntryPoint>]
 let main _ =
     let app = App(null)
 
-    PullAndSpleetCdkStack(app, "PullAndSpleetCdkStack", StackProps()) |> ignore
-    PipelineStack(app, "PipelineStack", StackProps()) |> ignore
+    
+    let pipelineStack = PipelineStack(app, "PipelineStack", StackProps())
+
+
+    let deployStage = new DeployStage(app, "DeployStage", new PullAndSpleetCdkStackProps(pipelineStack.cfnOutputProp.ImportValue))
+    
+    pipelineStack.pipeline.AddStage(deployStage) |> ignore
     app.Synth() |> ignore
     0

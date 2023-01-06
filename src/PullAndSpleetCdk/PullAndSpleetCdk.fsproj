@@ -6,6 +6,7 @@
     <RollForward>Major</RollForward>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="PullAndSPleetCdkStackProps.fs" />
     <Compile Include="PipelineStack.fs" />
     <Compile Include="PullAndSpleetCdkStack.fs" />
     <Compile Include="Program.fs" />
