@@ -12,16 +12,22 @@ type PullAndSpleetCdkStack(scope, id, props: PullAndSpleetCdkStackProps) as this
     let functionProps = 
         let initFunctionProps = new FunctionProps()
         initFunctionProps.Runtime <- Runtime.FROM_IMAGE
+
         let repoAttributes = new RepositoryAttributes()
         repoAttributes.RepositoryArn <- props.ecrRepoArn
         repoAttributes.RepositoryName <- props.ecrRepoName
-        initFunctionProps.Code <- Code.FromEcrImage(Repository.FromRepositoryAttributes(this, "EcrRepo", repoAttributes))
+        let ecrImageCodeProps = new EcrImageCodeProps()
+        ecrImageCodeProps.TagOrDigest <- AWS.SSM.StringParameter.FromStringParameterName(this, "ImageTag", "PULLANDSPLEET_IMAGE_TAG").StringValue
+        initFunctionProps.Code <- Code.FromEcrImage(Repository.FromRepositoryAttributes(this, "EcrRepo", repoAttributes), ecrImageCodeProps)
         initFunctionProps.Handler <- Handler.FROM_IMAGE
         initFunctionProps.Timeout <- Duration.Minutes(10.0)
+        initFunctionProps.Environment <- [|
+            "S3_Bucket", audioBucket.BucketName;
+        |] |> dict
         initFunctionProps
     let pullAndSpleetFunction = 
         let lambdaFunction = new Function(this, "PullAndSpleetFunction", functionProps)
-        audioBucket.GrantWrite(lambdaFunction.Role) |> ignore
+        audioBucket.GrantReadWrite(lambdaFunction.Role) |> ignore
         lambdaFunction
     
     

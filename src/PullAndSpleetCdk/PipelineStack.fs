@@ -59,10 +59,12 @@ type PipelineStack(scope, id, props) as this =
             "ls -la";
             "cd ./PullAndSpleet";
             "ls -la";
-            "docker build -t $REPOSITORY_URI:latest .";
+            "docker pull $REPOSITORY_URI:latest";
+            "docker build --cache-from $REPOSITORY_URI:latest -t $REPOSITORY_URI:latest .";
             "docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG";
             "docker push $REPOSITORY_URI:latest";
             "docker push $REPOSITORY_URI:$IMAGE_TAG";
+            "ssm put-parameter --name PULLANDSPLEET_IMAGE_TAG --value $IMAGE_TAG"
         |]
         let cacheBucketStatementProps = new PolicyStatementProps()
         cacheBucketStatementProps.Actions <- [|
