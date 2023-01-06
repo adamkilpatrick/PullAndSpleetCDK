@@ -5,6 +5,7 @@ open Amazon.CDK.Pipelines
 open Amazon.CDK.AWS.SSM
 open Amazon.CDK.AWS.CodeBuild
 open System.Collections.Generic
+open Amazon.CDK.AWS.IAM
 
 type PipelineStack(scope, id, props) as this =
     inherit Stack(scope, id, props)
@@ -51,18 +52,35 @@ type PipelineStack(scope, id, props) as this =
             "REPOSITORY_URI="+ecrRepo.RepositoryUri+"/pullandspleet";
             "COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)";
             "IMAGE_TAG=${COMMIT_HASH:=latest}";
+            "ls -la";
             "cd ./PullAndSpleet";
+            "ls -la";
             "docker build -t $REPOSITORY_URI:latest .";
             "docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG";
             "docker push $REPOSITORY_URI:latest";
             "docker push $REPOSITORY_URI:$IMAGE_TAG";
         |]
-
+        let policyStatementProps = new PolicyStatementProps()
+        policyStatementProps.Actions <- [|
+            "ecr:BatchCheckLayerAvailability";
+            "ecr:GetDownloadUrlForLayer";
+            "ecr:BatchGetImage";
+            "ecr:GetAuthorizationToken";
+            "ecr:TagResource";
+            "ecr:InitiateLayerUpload";
+            "ecr:UploadLayerPart";
+            "ecr:CompleteLayerUpload"
+        |]
+        policyStatementProps.Effect <- Effect.ALLOW
+        policyStatementProps.Resources <- [|ecrRepo.RepositoryArn|]
+        let policyStatement = new PolicyStatement(policyStatementProps)
+        initCodeBuildStepProps.RolePolicyStatements <- [|
+            policyStatement
+        |]
         initCodeBuildStepProps
     
     let codeBuildStep = 
         let initcodeBuildStep = new CodeBuildStep("DockerPushStep", codeBuildStepProps)
-        ecrRepo.GrantPullPush(initcodeBuildStep.Role) |> ignore
         initcodeBuildStep
 
     member this.cfnOutputProp = 
