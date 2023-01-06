@@ -45,7 +45,9 @@ type PipelineStack(scope, id, props) as this =
         connectionSourceOptions.ConnectionArn <- StringParameter.ValueForStringParameter(this, "GITHUB_CONNECTION_ARN")
         let buildEnvironment = new BuildEnvironment()
         buildEnvironment.BuildImage <- LinuxBuildImage.STANDARD_6_0
+        buildEnvironment.Privileged <- true
         initCodeBuildStepProps.BuildEnvironment <- buildEnvironment
+        initCodeBuildStepProps.Cache <- Cache.Local([|LocalCacheMode.DOCKER_LAYER|])
         initCodeBuildStepProps.Input <- CodePipelineSource.Connection("adamkilpatrick/PullAndSpleet","main",connectionSourceOptions)
         initCodeBuildStepProps.Commands <- [|
             "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin "+ecrRepo.RepositoryUri;
@@ -60,12 +62,15 @@ type PipelineStack(scope, id, props) as this =
             "docker push $REPOSITORY_URI:latest";
             "docker push $REPOSITORY_URI:$IMAGE_TAG";
         |]
+        let authTokenStatementProps = new PolicyStatementProps()
+        authTokenStatementProps.Actions <- [|"ecr:GetAuthorizationToken";|]
+        authTokenStatementProps.Effect <- Effect.ALLOW
+        authTokenStatementProps.Resources <- [|"*"|]
         let policyStatementProps = new PolicyStatementProps()
         policyStatementProps.Actions <- [|
             "ecr:BatchCheckLayerAvailability";
             "ecr:GetDownloadUrlForLayer";
             "ecr:BatchGetImage";
-            "ecr:GetAuthorizationToken";
             "ecr:TagResource";
             "ecr:InitiateLayerUpload";
             "ecr:UploadLayerPart";
@@ -73,9 +78,9 @@ type PipelineStack(scope, id, props) as this =
         |]
         policyStatementProps.Effect <- Effect.ALLOW
         policyStatementProps.Resources <- [|ecrRepo.RepositoryArn|]
-        let policyStatement = new PolicyStatement(policyStatementProps)
         initCodeBuildStepProps.RolePolicyStatements <- [|
-            policyStatement
+            new PolicyStatement(policyStatementProps);
+            new PolicyStatement(authTokenStatementProps);
         |]
         initCodeBuildStepProps
     
