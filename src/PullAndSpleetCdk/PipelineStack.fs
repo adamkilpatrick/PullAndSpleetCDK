@@ -51,7 +51,7 @@ type PipelineStack(scope, id, props) as this =
         initCodeBuildStepProps.Input <- CodePipelineSource.Connection("adamkilpatrick/PullAndSpleet","main",connectionSourceOptions)
         initCodeBuildStepProps.Commands <- [|
             "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin "+ecrRepo.RepositoryUri;
-            "REPOSITORY_URI="+ecrRepo.RepositoryUri+"/pullandspleet";
+            "REPOSITORY_URI="+ecrRepo.RepositoryUri;
             "COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)";
             "IMAGE_TAG=${COMMIT_HASH:=latest}";
             "ls -la";
