@@ -17,7 +17,7 @@ type PullAndSpleetCdkStack(scope, id, props: PullAndSpleetCdkStackProps) as this
         repoAttributes.RepositoryArn <- props.ecrRepoArn
         repoAttributes.RepositoryName <- props.ecrRepoName
         let ecrImageCodeProps = new EcrImageCodeProps()
-        ecrImageCodeProps.TagOrDigest <- AWS.SSM.StringParameter.FromStringParameterName(this, "ImageTag", "PULLANDSPLEET_IMAGE_TAG").StringValue
+        ecrImageCodeProps.TagOrDigest <- AWS.SSM.StringParameter.FromStringParameterName(this, "ImageTag", props.imageTagParameterName).StringValue
         initFunctionProps.Code <- Code.FromEcrImage(Repository.FromRepositoryAttributes(this, "EcrRepo", repoAttributes), ecrImageCodeProps)
         initFunctionProps.Handler <- Handler.FROM_IMAGE
         initFunctionProps.Timeout <- Duration.Minutes(10.0)

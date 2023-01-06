@@ -4,7 +4,6 @@ open Amazon.CDK
 open Amazon.CDK.Pipelines
 open Amazon.CDK.AWS.SSM
 open Amazon.CDK.AWS.CodeBuild
-open System.Collections.Generic
 open Amazon.CDK.AWS.IAM
 open Amazon.CDK.AWS.S3
 
@@ -39,8 +38,15 @@ type PipelineStack(scope, id, props) as this =
         initPipelineProps
 
     let ecrRepo = new AWS.ECR.Repository(this, "PullAndSpleetECR");
-    
+
+    let imageTagParameter =
+        let stringParameterProps = new StringParameterProps()
+        stringParameterProps.ParameterName <- "PULLANDSPLEET_IMAGE_TAG"
+        let tagParameter = new StringParameter(this, "EcrTagParameter", stringParameterProps)
+        tagParameter
+
     let codeBuildStepProps = 
+
         let initCodeBuildStepProps = new CodeBuildStepProps()
         let connectionSourceOptions = new ConnectionSourceOptions()
         connectionSourceOptions.ConnectionArn <- StringParameter.ValueForStringParameter(this, "GITHUB_CONNECTION_ARN")
@@ -64,8 +70,14 @@ type PipelineStack(scope, id, props) as this =
             "docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG";
             "docker push $REPOSITORY_URI:latest";
             "docker push $REPOSITORY_URI:$IMAGE_TAG";
-            "ssm put-parameter --name PULLANDSPLEET_IMAGE_TAG --value $IMAGE_TAG"
+            "aws ssm put-parameter --name PULLANDSPLEET_IMAGE_TAG --value $IMAGE_TAG"
         |]
+        let parameterStatementProps = new PolicyStatementProps()
+        parameterStatementProps.Actions <- [|
+            "ssm:PutParameter";
+        |]
+        parameterStatementProps.Effect <- Effect.ALLOW
+        parameterStatementProps.Resources <- [|imageTagParameter.ParameterArn|]
         let cacheBucketStatementProps = new PolicyStatementProps()
         cacheBucketStatementProps.Actions <- [|
             "s3:PutObject";
@@ -96,6 +108,7 @@ type PipelineStack(scope, id, props) as this =
         initCodeBuildStepProps.RolePolicyStatements <- [|
             new PolicyStatement(policyStatementProps);
             new PolicyStatement(authTokenStatementProps);
+            new PolicyStatement(parameterStatementProps);
         |]
         initCodeBuildStepProps
     
@@ -103,6 +116,7 @@ type PipelineStack(scope, id, props) as this =
         let initcodeBuildStep = new CodeBuildStep("DockerPushStep", codeBuildStepProps)
         initcodeBuildStep
 
+    member this.imageTagParameterArn = imageTagParameter.ParameterArn
     member this.ecrRepoArn = 
         let cfnOutputProps = new CfnOutputProps()
         cfnOutputProps.ExportName <- "ECR-REPO-ARN"
