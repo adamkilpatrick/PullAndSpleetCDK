@@ -6,6 +6,7 @@ open Amazon.CDK.AWS.SSM
 open Amazon.CDK.AWS.CodeBuild
 open Amazon.CDK.AWS.IAM
 open Amazon.CDK.AWS.S3
+open Amazon.CDK.AWS.ECR
 
 type PipelineStack(scope, id, props) as this =
     inherit Stack(scope, id, props)
@@ -36,8 +37,14 @@ type PipelineStack(scope, id, props) as this =
         initPipelineProps.SynthCodeBuildDefaults <- codeBuildOptions
         initPipelineProps.AssetPublishingCodeBuildDefaults <- codeBuildOptions
         initPipelineProps
-
-    let ecrRepo = new AWS.ECR.Repository(this, "PullAndSpleetECR");
+    let ecrRepoProps = 
+        let lifeCycleRule = new LifecycleRule()
+        lifeCycleRule.MaxImageCount <- 5
+        lifeCycleRule.RulePriority <- 1
+        let initEcrRepoProps = new RepositoryProps()
+        initEcrRepoProps.LifecycleRules <- [|lifeCycleRule|]
+        initEcrRepoProps
+    let ecrRepo = new Repository(this, "PullAndSpleetECR", ecrRepoProps);
 
     let imageTagParameter =
         let stringParameterProps = new StringParameterProps()
@@ -71,7 +78,7 @@ type PipelineStack(scope, id, props) as this =
             "docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG";
             "docker push $REPOSITORY_URI:latest";
             "docker push $REPOSITORY_URI:$IMAGE_TAG";
-            "aws ssm put-parameter --name PULLANDSPLEET_IMAGE_TAG --value $IMAGE_TAG"
+            "aws ssm put-parameter --name PULLANDSPLEET_IMAGE_TAG --value $IMAGE_TAG --overwrite"
         |]
         let parameterStatementProps = new PolicyStatementProps()
         parameterStatementProps.Actions <- [|
