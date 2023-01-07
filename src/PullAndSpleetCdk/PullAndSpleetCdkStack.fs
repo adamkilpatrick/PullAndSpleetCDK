@@ -18,7 +18,7 @@ type PullAndSpleetCdkStack(scope, id, props: PullAndSpleetCdkStackProps) as this
         repoAttributes.RepositoryArn <- props.ecrRepoArn
         repoAttributes.RepositoryName <- props.ecrRepoName
         let stringParameterAttributes = new StringParameterAttributes()
-        stringParameterAttributes.ParameterName <- props.imageTagParameterName
+        stringParameterAttributes.ParameterName <- "PULLANDSPLEET_IMAGE_TAG"
         stringParameterAttributes.SimpleName <- true
         let ecrImageCodeProps = new EcrImageCodeProps()
         ecrImageCodeProps.TagOrDigest <- StringParameter.FromStringParameterAttributes(this, "ImageTag", stringParameterAttributes).StringValue
