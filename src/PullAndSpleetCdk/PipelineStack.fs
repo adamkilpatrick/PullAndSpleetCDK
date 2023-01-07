@@ -42,6 +42,7 @@ type PipelineStack(scope, id, props) as this =
     let imageTagParameter =
         let stringParameterProps = new StringParameterProps()
         stringParameterProps.ParameterName <- "PULLANDSPLEET_IMAGE_TAG"
+        stringParameterProps.StringValue <- "EMPTY"
         let tagParameter = new StringParameter(this, "EcrTagParameter", stringParameterProps)
         tagParameter
 
@@ -116,7 +117,13 @@ type PipelineStack(scope, id, props) as this =
         let initcodeBuildStep = new CodeBuildStep("DockerPushStep", codeBuildStepProps)
         initcodeBuildStep
 
-    member this.imageTagParameterArn = imageTagParameter.ParameterArn
+    member this.imageTagParameterArn = 
+        let cfnOutputProps = new CfnOutputProps()
+        cfnOutputProps.ExportName <- "IMAGE-TAG-PARAM"
+        cfnOutputProps.Value <- imageTagParameter.ParameterArn
+        let cfnOutput = new CfnOutput(this, "ImageTagParam", cfnOutputProps)
+        cfnOutput
+    
     member this.ecrRepoArn = 
         let cfnOutputProps = new CfnOutputProps()
         cfnOutputProps.ExportName <- "ECR-REPO-ARN"

@@ -4,6 +4,7 @@ open Amazon.CDK
 open Amazon.CDK.AWS.Lambda
 open Amazon.CDK.AWS.S3
 open Amazon.CDK.AWS.ECR
+open Amazon.CDK.AWS.SSM
 
 type PullAndSpleetCdkStack(scope, id, props: PullAndSpleetCdkStackProps) as this =
     inherit Stack(scope, id, props)
@@ -16,8 +17,11 @@ type PullAndSpleetCdkStack(scope, id, props: PullAndSpleetCdkStackProps) as this
         let repoAttributes = new RepositoryAttributes()
         repoAttributes.RepositoryArn <- props.ecrRepoArn
         repoAttributes.RepositoryName <- props.ecrRepoName
+        let stringParameterAttributes = new StringParameterAttributes()
+        stringParameterAttributes.ParameterName <- props.imageTagParameterName
+        stringParameterAttributes.SimpleName <- true
         let ecrImageCodeProps = new EcrImageCodeProps()
-        ecrImageCodeProps.TagOrDigest <- AWS.SSM.StringParameter.FromStringParameterName(this, "ImageTag", props.imageTagParameterName).StringValue
+        ecrImageCodeProps.TagOrDigest <- StringParameter.FromStringParameterAttributes(this, "ImageTag", stringParameterAttributes).StringValue
         initFunctionProps.Code <- Code.FromEcrImage(Repository.FromRepositoryAttributes(this, "EcrRepo", repoAttributes), ecrImageCodeProps)
         initFunctionProps.Handler <- Handler.FROM_IMAGE
         initFunctionProps.Timeout <- Duration.Minutes(10.0)
