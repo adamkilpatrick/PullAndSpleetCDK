@@ -26,7 +26,7 @@ type PullAndSpleetCdkStack(scope, id, props: PullAndSpleetCdkStackProps) as this
         initFunctionProps.Handler <- Handler.FROM_IMAGE
         initFunctionProps.Timeout <- Duration.Minutes(10.0)
         initFunctionProps.Environment <- [|
-            "S3_Bucket", audioBucket.BucketName;
+            "S3_BUCKET", audioBucket.BucketName;
         |] |> dict
         initFunctionProps
     let pullAndSpleetFunction = 
