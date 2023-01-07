@@ -53,7 +53,7 @@ type PipelineStack(scope, id, props) as this =
         connectionSourceOptions.ConnectionArn <- StringParameter.ValueForStringParameter(this, "GITHUB_CONNECTION_ARN")
         let buildCacheBucket = new Bucket(this, "DockerBuildCacheBucket")
         let buildEnvironment = new BuildEnvironment()
-        buildEnvironment.BuildImage <- LinuxBuildImage.STANDARD_6_0
+        buildEnvironment.BuildImage <- LinuxBuildImage.AMAZON_LINUX_2_4
         buildEnvironment.Privileged <- true
         initCodeBuildStepProps.BuildEnvironment <- buildEnvironment
         initCodeBuildStepProps.Cache <- Cache.Bucket(buildCacheBucket)
