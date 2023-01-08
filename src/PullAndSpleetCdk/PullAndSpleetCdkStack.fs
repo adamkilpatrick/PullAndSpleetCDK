@@ -25,6 +25,7 @@ type PullAndSpleetCdkStack(scope, id, props: PullAndSpleetCdkStackProps) as this
         initFunctionProps.Code <- Code.FromEcrImage(Repository.FromRepositoryAttributes(this, "EcrRepo", repoAttributes), ecrImageCodeProps)
         initFunctionProps.Handler <- Handler.FROM_IMAGE
         initFunctionProps.Timeout <- Duration.Minutes(10.0)
+        initFunctionProps.MemorySize <- 2048
         initFunctionProps.Environment <- [|
             "S3_BUCKET", audioBucket.BucketName;
         |] |> dict
